@@ -88,20 +88,32 @@
             animation: pulse 1.5s infinite;
         }
 
-        /* Game Area with Basket */
+        /* Balloon Game Styles */
         .game-area {
-            position: relative; height: 250px; background: rgba(0,0,0,0.35);
+            position: relative; height: 260px; background: rgba(0,0,0,0.35);
             border-radius: 15px; border: 1px dashed #ff69b4; overflow: hidden;
-            margin-bottom: 15px; touch-action: none;
+            margin-bottom: 15px;
         }
-        .basket {
-            position: absolute; bottom: 5px; left: 40%; width: 60px; height: 45px;
-            font-size: 38px; line-height: 45px; text-align: center;
-            transform: translateX(-50%); transition: left 0.05s linear;
+        
+        .balloon {
+            position: absolute; width: 48px; height: 60px;
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 20px; font-weight: bold; color: white;
             cursor: pointer; z-index: 5;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
         }
-        .falling-heart {
-            position: absolute; font-size: 26px; z-index: 3;
+        .balloon::after {
+            content: ''; position: absolute; bottom: -8px; left: 50%;
+            width: 2px; height: 10px; background: rgba(255,255,255,0.5);
+            transform: translateX(-50%);
+        }
+
+        .name-display {
+            font-size: 24px; font-weight: bold; letter-spacing: 5px;
+            color: #ff69b4; min-height: 35px; margin-top: 10px;
+            text-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
         }
 
         .gif-img {
@@ -164,20 +176,18 @@
         <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
-    <!-- Layer 2: Heart Catcher Game with Basket -->
+    <!-- Layer 2: Name Balloon Pop Game -->
     <div class="layer" id="layer2">
-        <h2>Basket Catch Game 🧺💖</h2>
-        <p>Aaradhya, Basket ko slide karke <b>10 Hearts</b> catch karo!</p>
-        <div class="game-area" id="gameArea" onmousemove="moveBasket(event)" ontouchmove="moveBasketTouch(event)">
-            <div class="basket" id="basket">🧺</div>
-        </div>
-        <p style="font-weight: bold; color: #ff69b4;" id="scoreText">Caught: 0 / 10</p>
+        <h2>Pop My Name Balloons! 🎈</h2>
+        <p>Balloons par click karke mera naam poora karo!</p>
+        <div class="game-area" id="gameArea"></div>
+        <div class="name-display" id="nameDisplay">_ _ _ _ _ _ _ _</div>
     </div>
 
     <!-- Layer 3: Welcome -->
     <div class="layer" id="layer3">
         <div class="emoji">🎁</div>
-        <h2>Yay! All Hearts Caught! 🎉</h2>
+        <h2>Yay! Name Completed! 🎉</h2>
         <p>Aapka din thoda special aur relaxed banane ke liye ye interactive surprise aapke liye hai!</p>
         <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
@@ -279,10 +289,13 @@
     function id(elem) { return document.getElementById(elem); }
 
     let currentLayer = 1;
-    let score = 0;
-    let gameLoop;
     let musicStarted = false;
-    let basketX = 50; // In percentage
+    
+    // Name Game Variables
+    const nameLetters = ['A', 'A', 'R', 'A', 'D', 'H', 'Y', 'A'];
+    let currentLetterIndex = 0;
+    let balloonColors = ['#ff69b4', '#ff4757', '#ffa502', '#2ed573', '#1e90ff', '#a55eea'];
+    let balloonInterval;
 
     function handleGlobalClick(e) {
         if (!musicStarted) {
@@ -291,8 +304,9 @@
             musicStarted = true;
         }
 
-        if (currentLayer === 2 && score < 10) {
-            return; // Lock layer transition while playing game
+        // Lock screen tap during game
+        if (currentLayer === 2 && currentLetterIndex < nameLetters.length) {
+            return;
         }
 
         if (currentLayer < 12) {
@@ -311,86 +325,88 @@
         id('progressBar').style.width = (layerNum / 12) * 100 + '%';
 
         if(layerNum === 2) {
-            startBasketGame();
+            startBalloonGame();
         } else if(layerNum === 12) {
             triggerConfetti();
         }
     }
 
-    /* Basket Control Mechanics */
-    function moveBasket(e) {
+    function startBalloonGame() {
+        currentLetterIndex = 0;
+        updateNameDisplay();
         const gameArea = id('gameArea');
-        const rect = gameArea.getBoundingClientRect();
-        let x = ((e.clientX - rect.left) / rect.width) * 100;
-        updateBasketPos(x);
-    }
+        gameArea.innerHTML = '';
 
-    function moveBasketTouch(e) {
-        const gameArea = id('gameArea');
-        const rect = gameArea.getBoundingClientRect();
-        let touchX = e.touches[0].clientX;
-        let x = ((touchX - rect.left) / rect.width) * 100;
-        updateBasketPos(x);
-    }
-
-    function updateBasketPos(x) {
-        basketX = Math.max(10, Math.min(90, x));
-        id('basket').style.left = basketX + '%';
-    }
-
-    function startBasketGame() {
-        score = 0;
-        id('scoreText').innerText = "Caught: 0 / 10";
-        let hearts = [];
-        const gameArea = id('gameArea');
-
-        // Clear existing hearts
-        const oldHearts = gameArea.querySelectorAll('.falling-heart');
-        oldHearts.forEach(h => h.remove());
-
-        let spawnTimer = setInterval(() => {
-            if(score >= 10) {
-                clearInterval(spawnTimer);
-                clearInterval(gameLoop);
-                id('scoreText').innerText = "Awesome! 🎉 Tap anywhere to continue!";
+        balloonInterval = setInterval(() => {
+            if (currentLetterIndex >= nameLetters.length) {
+                clearInterval(balloonInterval);
                 return;
             }
+            createBalloon();
+        }, 700);
+    }
 
-            let heart = document.createElement('div');
-            heart.className = 'falling-heart';
-            heart.innerHTML = '💖';
-            let posX = Math.random() * 80 + 10;
-            let posY = 0;
-            heart.style.left = posX + '%';
-            heart.style.top = '0px';
-            gameArea.appendChild(heart);
+    function createBalloon() {
+        const gameArea = id('gameArea');
+        const balloon = document.createElement('div');
+        balloon.className = 'balloon';
+        
+        // Pick target letter or random letter
+        let targetLetter = nameLetters[currentLetterIndex];
+        let randomLetter = nameLetters[Math.floor(Math.random() * nameLetters.length)];
+        let displayLetter = Math.random() > 0.3 ? targetLetter : randomLetter;
 
-            hearts.push({ elem: heart, x: posX, y: posY });
-        }, 800);
+        balloon.innerText = displayLetter;
+        balloon.style.background = balloonColors[Math.floor(Math.random() * balloonColors.length)];
+        
+        let leftPos = Math.random() * 80 + 10;
+        balloon.style.left = leftPos + '%';
+        balloon.style.bottom = '-60px';
 
-        // Game Loop for Collision Detection
-        gameLoop = setInterval(() => {
-            hearts.forEach((h, index) => {
-                h.y += 3;
-                h.elem.style.top = h.y + 'px';
+        gameArea.appendChild(balloon);
 
-                // Check basket collision (bottom area)
-                if(h.y >= 200 && h.y <= 230) {
-                    if(Math.abs(h.x - basketX) < 12) {
-                        score++;
-                        id('scoreText').innerText = "Caught: " + score + " / 10";
-                        h.elem.remove();
-                        hearts.splice(index, 1);
-                    }
-                }
+        let bottomPos = -60;
+        let floatLoop = setInterval(() => {
+            bottomPos += 2.5;
+            balloon.style.bottom = bottomPos + 'px';
 
-                // Remove missed hearts
-                if(h.y > 240) {
-                    h.elem.remove();
-                    hearts.splice(index, 1);
-                }
-            });
+            if (bottomPos > 270) {
+                clearInterval(floatLoop);
+                balloon.remove();
+            }
         }, 30);
+
+        balloon.onclick = (e) => {
+            e.stopPropagation();
+            if (displayLetter === nameLetters[currentLetterIndex]) {
+                currentLetterIndex++;
+                updateNameDisplay();
+                balloon.style.transform = 'scale(1.4)';
+                balloon.style.opacity = '0';
+                setTimeout(() => balloon.remove(), 200);
+
+                if (currentLetterIndex >= nameLetters.length) {
+                    clearInterval(balloonInterval);
+                    id('nameDisplay').innerText = "A A R A D H Y A 🎉";
+                    setTimeout(() => {
+                        currentLayer = 3;
+                        showLayer(3);
+                    }, 1000);
+                }
+            }
+        };
+    }
+
+    function updateNameDisplay() {
+        let str = '';
+        for (let i = 0; i < nameLetters.length; i++) {
+            if (i < currentLetterIndex) {
+                str += nameLetters[i] + ' ';
+            } else {
+                str += '_ ';
+            }
+        }
+        id('nameDisplay').innerText = str.trim();
     }
 
     function pickTreat(item) {
