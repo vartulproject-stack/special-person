@@ -49,7 +49,7 @@
             to { opacity: 1; transform: scale(1.02); text-shadow: 0 0 15px #ff69b4; }
         }
 
-        /* Cute Teddy Bear Styles */
+        /* Teddy Bear Styles */
         .teddy {
             position: relative; width: 100px; height: 100px; margin: 15px auto 20px;
         }
@@ -88,19 +88,20 @@
             animation: pulse 1.5s infinite;
         }
 
-        /* Game Area */
+        /* Game Area with Basket */
         .game-area {
-            position: relative; height: 240px; background: rgba(0,0,0,0.3);
+            position: relative; height: 250px; background: rgba(0,0,0,0.35);
             border-radius: 15px; border: 1px dashed #ff69b4; overflow: hidden;
-            margin-bottom: 15px;
+            margin-bottom: 15px; touch-action: none;
+        }
+        .basket {
+            position: absolute; bottom: 5px; left: 40%; width: 60px; height: 45px;
+            font-size: 38px; line-height: 45px; text-align: center;
+            transform: translateX(-50%); transition: left 0.05s linear;
+            cursor: pointer; z-index: 5;
         }
         .falling-heart {
-            position: absolute; font-size: 28px; cursor: pointer;
-            transition: transform 0.1s; animation: fall 3s linear infinite;
-        }
-        @keyframes fall {
-            0% { top: -40px; }
-            100% { top: 250px; }
+            position: absolute; font-size: 26px; z-index: 3;
         }
 
         .gif-img {
@@ -139,7 +140,7 @@
 <div class="card">
     <div class="progress"><div class="bar" id="progressBar"></div></div>
 
-    <!-- Layer 1: Opening & Cute Teddy -->
+    <!-- Layer 1: Opening & Teddy -->
     <div class="layer active" id="layer1">
         <div class="emoji">🌸</div>
         <p class="intro-text">My dear Aaradhya ✨</p>
@@ -163,18 +164,20 @@
         <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
-    <!-- Layer 2: 10 Hearts Game -->
+    <!-- Layer 2: Heart Catcher Game with Basket -->
     <div class="layer" id="layer2">
-        <h2>Heart Catcher Game 💖</h2>
-        <p>Aaradhya, <b>10 Hearts</b> touch karke collect karo!</p>
-        <div class="game-area" id="gameArea"></div>
-        <p style="font-weight: bold; color: #ff69b4;" id="scoreText">Collected: 0 / 10</p>
+        <h2>Basket Catch Game 🧺💖</h2>
+        <p>Aaradhya, Basket ko slide karke <b>10 Hearts</b> catch karo!</p>
+        <div class="game-area" id="gameArea" onmousemove="moveBasket(event)" ontouchmove="moveBasketTouch(event)">
+            <div class="basket" id="basket">🧺</div>
+        </div>
+        <p style="font-weight: bold; color: #ff69b4;" id="scoreText">Caught: 0 / 10</p>
     </div>
 
     <!-- Layer 3: Welcome -->
     <div class="layer" id="layer3">
         <div class="emoji">🎁</div>
-        <h2>Yay! All Hearts Collected! 🎉</h2>
+        <h2>Yay! All Hearts Caught! 🎉</h2>
         <p>Aapka din thoda special aur relaxed banane ke liye ye interactive surprise aapke liye hai!</p>
         <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
@@ -277,23 +280,21 @@
 
     let currentLayer = 1;
     let score = 0;
-    let gameInterval;
+    let gameLoop;
     let musicStarted = false;
+    let basketX = 50; // In percentage
 
     function handleGlobalClick(e) {
-        // Play audio on first touch
         if (!musicStarted) {
             let audio = id('bgMusic');
             audio.play().catch(err => console.log("Audio play blocked"));
             musicStarted = true;
         }
 
-        // Lock screen progression during heart game layer
         if (currentLayer === 2 && score < 10) {
-            return;
+            return; // Lock layer transition while playing game
         }
 
-        // Progress layer on tap
         if (currentLayer < 12) {
             currentLayer++;
             showLayer(currentLayer);
@@ -310,51 +311,86 @@
         id('progressBar').style.width = (layerNum / 12) * 100 + '%';
 
         if(layerNum === 2) {
-            startGame();
+            startBasketGame();
         } else if(layerNum === 12) {
             triggerConfetti();
         }
     }
 
-    function startGame() {
-        score = 0;
-        id('scoreText').innerText = "Collected: 0 / 10";
-        id('gameArea').innerHTML = '';
-        
-        gameInterval = setInterval(() => {
-            if(score >= 10) {
-                clearInterval(gameInterval);
-                return;
-            }
-            createHeart();
-        }, 650);
+    /* Basket Control Mechanics */
+    function moveBasket(e) {
+        const gameArea = id('gameArea');
+        const rect = gameArea.getBoundingClientRect();
+        let x = ((e.clientX - rect.left) / rect.width) * 100;
+        updateBasketPos(x);
     }
 
-    function createHeart() {
+    function moveBasketTouch(e) {
         const gameArea = id('gameArea');
-        const heart = document.createElement('div');
-        heart.className = 'falling-heart';
-        heart.innerHTML = '💖';
-        heart.style.left = Math.random() * 80 + 10 + '%';
-        heart.style.animationDuration = (Math.random() * 1.5 + 2) + 's';
+        const rect = gameArea.getBoundingClientRect();
+        let touchX = e.touches[0].clientX;
+        let x = ((touchX - rect.left) / rect.width) * 100;
+        updateBasketPos(x);
+    }
 
-        heart.onclick = (e) => {
-            e.stopPropagation(); // Prevents layer jump when tapping heart
-            score++;
-            id('scoreText').innerText = "Collected: " + score + " / 10";
-            heart.remove();
-            
+    function updateBasketPos(x) {
+        basketX = Math.max(10, Math.min(90, x));
+        id('basket').style.left = basketX + '%';
+    }
+
+    function startBasketGame() {
+        score = 0;
+        id('scoreText').innerText = "Caught: 0 / 10";
+        let hearts = [];
+        const gameArea = id('gameArea');
+
+        // Clear existing hearts
+        const oldHearts = gameArea.querySelectorAll('.falling-heart');
+        oldHearts.forEach(h => h.remove());
+
+        let spawnTimer = setInterval(() => {
             if(score >= 10) {
-                clearInterval(gameInterval);
+                clearInterval(spawnTimer);
+                clearInterval(gameLoop);
                 id('scoreText').innerText = "Awesome! 🎉 Tap anywhere to continue!";
+                return;
             }
-        };
 
-        gameArea.appendChild(heart);
+            let heart = document.createElement('div');
+            heart.className = 'falling-heart';
+            heart.innerHTML = '💖';
+            let posX = Math.random() * 80 + 10;
+            let posY = 0;
+            heart.style.left = posX + '%';
+            heart.style.top = '0px';
+            gameArea.appendChild(heart);
 
-        setTimeout(() => {
-            if(heart.parentNode) heart.remove();
-        }, 3200);
+            hearts.push({ elem: heart, x: posX, y: posY });
+        }, 800);
+
+        // Game Loop for Collision Detection
+        gameLoop = setInterval(() => {
+            hearts.forEach((h, index) => {
+                h.y += 3;
+                h.elem.style.top = h.y + 'px';
+
+                // Check basket collision (bottom area)
+                if(h.y >= 200 && h.y <= 230) {
+                    if(Math.abs(h.x - basketX) < 12) {
+                        score++;
+                        id('scoreText').innerText = "Caught: " + score + " / 10";
+                        h.elem.remove();
+                        hearts.splice(index, 1);
+                    }
+                }
+
+                // Remove missed hearts
+                if(h.y > 240) {
+                    h.elem.remove();
+                    hearts.splice(index, 1);
+                }
+            });
+        }, 30);
     }
 
     function pickTreat(item) {
