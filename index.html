@@ -8,47 +8,90 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
         body { 
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); 
+            background: linear-gradient(135deg, #0f0c20 0%, #1a102f 50%, #2a0826 100%); 
             min-height: 100vh; display: flex; justify-content: center; align-items: center; 
             padding: 20px; overflow: hidden; position: relative; user-select: none;
+            color: #ffffff; cursor: pointer;
         }
 
-        .heart-bg {
-            position: absolute; color: rgba(255, 255, 255, 0.6);
-            font-size: 20px; animation: float 6s infinite linear; bottom: -50px;
+        .stars-bg {
+            position: absolute; color: rgba(255, 182, 193, 0.4);
+            font-size: 16px; animation: float 6s infinite linear; bottom: -50px;
         }
         @keyframes float {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            0% { transform: translateY(0) rotate(0deg); opacity: 0.8; }
             100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
         }
 
         .card { 
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-            border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); 
-            width: 100%; max-width: 480px; padding: 25px; text-align: center; 
+            background: rgba(25, 20, 40, 0.85); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 105, 180, 0.2);
+            border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); 
+            width: 100%; max-width: 480px; padding: 30px 25px; text-align: center; 
             position: relative; z-index: 10;
         }
+
         .layer { display: none; transition: all 0.4s ease; }
         .layer.active { display: block; animation: fadeIn 0.6s ease-in-out; }
         
-        h2 { color: #d63384; margin-bottom: 12px; font-size: 22px; }
-        p { color: #4a4a4a; line-height: 1.6; margin-bottom: 20px; font-size: 15px; }
+        h2 { color: #ff69b4; margin-bottom: 15px; font-size: 22px; text-shadow: 0 0 10px rgba(255, 105, 180, 0.3); }
+        p { color: #e0e0e0; line-height: 1.6; margin-bottom: 20px; font-size: 15px; }
         
         .intro-text {
-            font-size: 24px; font-weight: bold; color: #d63384;
+            font-size: 24px; font-weight: bold; color: #ff75a0;
             animation: smoothGlow 3s ease-in-out infinite alternate;
-            margin: 20px 0; line-height: 1.4;
+            margin: 15px 0 10px 0; line-height: 1.4;
         }
         @keyframes smoothGlow {
-            from { opacity: 0.5; transform: scale(0.98); }
-            to { opacity: 1; transform: scale(1.02); }
+            from { opacity: 0.7; transform: scale(0.98); text-shadow: 0 0 5px #ff69b4; }
+            to { opacity: 1; transform: scale(1.02); text-shadow: 0 0 15px #ff69b4; }
         }
 
-        /* Game Container */
+        /* Cute Teddy Bear Styles */
+        .teddy {
+            position: relative; width: 100px; height: 100px; margin: 15px auto 20px;
+        }
+        .teddy .head {
+            width: 70px; height: 60px; background: #c28d5d; border-radius: 50%;
+            position: absolute; top: 10px; left: 15px;
+        }
+        .teddy .ear {
+            width: 24px; height: 24px; background: #c28d5d; border-radius: 50%; position: absolute;
+        }
+        .teddy .ear.left { top: 2px; left: 12px; }
+        .teddy .ear.right { top: 2px; right: 12px; }
+        .teddy .ear::after {
+            content: ''; position: absolute; width: 12px; height: 12px;
+            background: #e6b89c; border-radius: 50%; top: 6px; left: 6px;
+        }
+        .teddy .eye {
+            width: 8px; height: 8px; background: #222; border-radius: 50%; position: absolute; top: 22px;
+        }
+        .teddy .eye.left { left: 24px; }
+        .teddy .eye.right { right: 24px; }
+        .teddy .muzzle {
+            width: 26px; height: 20px; background: #e6b89c; border-radius: 50%;
+            position: absolute; top: 28px; left: 22px;
+        }
+        .teddy .nose {
+            width: 10px; height: 7px; background: #4a2e18; border-radius: 40%;
+            position: absolute; top: 3px; left: 8px;
+        }
+        .teddy .body {
+            width: 76px; height: 50px; background: #c28d5d; border-radius: 40% 40% 50% 50%;
+            position: absolute; top: 52px; left: 12px;
+        }
+        .teddy .heart-holding {
+            position: absolute; font-size: 22px; top: 50px; left: 38px;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Game Area */
         .game-area {
-            position: relative; height: 260px; background: #fff0f3;
-            border-radius: 15px; border: 2px dashed #ffb3c1; overflow: hidden;
+            position: relative; height: 240px; background: rgba(0,0,0,0.3);
+            border-radius: 15px; border: 1px dashed #ff69b4; overflow: hidden;
             margin-bottom: 15px;
         }
         .falling-heart {
@@ -57,176 +100,220 @@
         }
         @keyframes fall {
             0% { top: -40px; }
-            100% { top: 270px; }
+            100% { top: 250px; }
         }
 
         .gif-img {
-            width: 100%; max-width: 240px; height: auto; border-radius: 15px;
-            margin: 10px 0 15px 0; box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            width: 100%; max-width: 220px; height: auto; border-radius: 15px;
+            margin: 10px 0 15px 0; box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255, 105, 180, 0.3);
         }
 
-        .btn { 
-            background: #d63384; color: white; border: none; padding: 12px 24px; 
-            border-radius: 25px; cursor: pointer; font-size: 15px; font-weight: 600; 
-            transition: all 0.2s; margin: 5px;
-        }
-        .btn:hover { background: #b02a6f; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(214, 51, 132, 0.3); }
-        .btn-outline { background: transparent; border: 2px solid #d63384; color: #d63384; }
-        .btn-outline:hover { background: #d63384; color: white; }
+        .progress { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-bottom: 25px; overflow: hidden; }
+        .bar { height: 100%; background: linear-gradient(90deg, #ff69b4, #ff8da1); width: 8%; transition: width 0.4s ease; }
+        .emoji { font-size: 45px; margin-bottom: 10px; display: inline-block; animation: pulse 2s infinite; }
 
-        .progress { height: 6px; background: #ffe6e9; border-radius: 3px; margin-bottom: 25px; overflow: hidden; }
-        .bar { height: 100%; background: linear-gradient(90deg, #ff758c, #ff7eb3); width: 8%; transition: width 0.4s ease; }
-        .emoji { font-size: 50px; margin-bottom: 10px; display: inline-block; animation: pulse 2s infinite; }
-
-        .treat-box { font-size: 40px; cursor: pointer; margin: 10px 0; transition: transform 0.2s; display: inline-block; }
-        .treat-box:hover { transform: scale(1.2); }
+        .treat-box { font-size: 40px; cursor: pointer; margin: 10px 10px; transition: transform 0.2s; display: inline-block; }
+        .treat-box:hover { transform: scale(1.25); }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .tap-hint {
+            font-size: 11px; color: #ff8da1; margin-top: 15px; letter-spacing: 1px;
+            opacity: 0.7; animation: blink 2s infinite;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
     </style>
 </head>
-<body>
+<body onclick="handleGlobalClick(event)">
 
-<!-- Background Song (p.mp3) -->
+<!-- Background Audio (p.mp3) -->
 <audio id="bgMusic" loop preload="auto">
     <source src="p.mp3" type="audio/mpeg">
 </audio>
 
-<!-- Background Flowers -->
-<div id="heartsContainer"></div>
+<!-- Background Particles -->
+<div id="starsContainer"></div>
 
 <div class="card">
     <div class="progress"><div class="bar" id="progressBar"></div></div>
 
-    <!-- Layer 1: Smooth Opening Note -->
+    <!-- Layer 1: Opening & Cute Teddy -->
     <div class="layer active" id="layer1">
         <div class="emoji">🌸</div>
-        <p class="intro-text">My dear Aaradhya,<br>you're special to me... ✨</p>
+        <p class="intro-text">My dear Aaradhya ✨</p>
+        
+        <!-- Teddy Bear Under Name -->
+        <div class="teddy">
+            <div class="ear left"></div>
+            <div class="ear right"></div>
+            <div class="head">
+                <div class="eye left"></div>
+                <div class="eye right"></div>
+                <div class="muzzle">
+                    <div class="nose"></div>
+                </div>
+            </div>
+            <div class="body"></div>
+            <div class="heart-holding">💖</div>
+        </div>
+
         <p>Aapke liye ek chhota sa surprise banaya hai. Bas hum chahte the ki aaj aapke chehre par ek pyari si smile aaye!</p>
-        <button class="btn" onclick="startExperience()">Aage Badho 👉</button>
+        <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
     <!-- Layer 2: 10 Hearts Game -->
     <div class="layer" id="layer2">
         <h2>Heart Catcher Game 💖</h2>
-        <p>Aaradhya, <b>10 Hearts</b> click karke collect karo!</p>
+        <p>Aaradhya, <b>10 Hearts</b> touch karke collect karo!</p>
         <div class="game-area" id="gameArea"></div>
-        <p style="font-weight: bold; color: #d63384;" id="scoreText">Collected: 0 / 10</p>
-        <button class="btn" id="gameNextBtn" onclick="nextLayer(3)" style="display:none;">Next Layer 🚀</button>
+        <p style="font-weight: bold; color: #ff69b4;" id="scoreText">Collected: 0 / 10</p>
     </div>
 
-    <!-- Layer 3: Welcome & Music On -->
+    <!-- Layer 3: Welcome -->
     <div class="layer" id="layer3">
         <div class="emoji">🎁</div>
         <h2>Yay! All Hearts Collected! 🎉</h2>
         <p>Aapka din thoda special aur relaxed banane ke liye ye interactive surprise aapke liye hai!</p>
-        <button class="btn" onclick="nextLayer(4)">Let's Continue ✨</button>
+        <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
-    <!-- Layer 4: Pause & Relax -->
+    <!-- Layer 4: Relax Note -->
     <div class="layer" id="layer4">
         <div class="emoji">☕</div>
         <h2>Rule No. 1: Hamesha Relax Raho!</h2>
         <p>Thoda sa break lo, Aaradhya. Life chahe kitni bhi busy ho, ek lambi saans lo aur halki si smile lao face par. Sab achha hoga!</p>
-        <button class="btn" onclick="nextLayer(5)">Smile Kar Liya 😊</button>
+        <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
-    <!-- Layer 5: Interactive Mood Check -->
+    <!-- Layer 5: Mood Choice -->
     <div class="layer" id="layer5">
         <div class="emoji">🎭</div>
         <h2>Aaj Mood Kaisa Hai?</h2>
-        <p>Sach sach batao, aaj ka din kaisa chal raha hai?</p>
-        <button class="btn btn-outline" onclick="setMood('Thoda Thaka Hua 😴')">Thaka Hua 😴</button>
-        <button class="btn btn-outline" onclick="setMood('Mast & Cool 😎')">Mast 😎</button>
-        <button class="btn btn-outline" onclick="setMood('Bore Ho Rahi Hoon 🙄')">Bore 🙄</button>
+        <p>Aap jahan bhi touch karogi, mood select ho jayega!</p>
+        <div style="margin: 20px 0;">
+            <p style="color: #ff8da1;">😴 Thaka Hua &nbsp;|&nbsp; 😎 Mast &nbsp;|&nbsp; 🙄 Bore</p>
+        </div>
+        <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
     <!-- Layer 6: Encouragement Note -->
     <div class="layer" id="layer6">
         <div class="emoji">🌸</div>
         <h2>Humne Notice Kiya Hai...</h2>
-        <p id="moodResponse">Chahe kitni bhi mushkil situation ho ya kitna bhi stress ho, aap har cheez ko kitne shaant dhang se handle kar leti ho. It's really amazing, Aaradhya!</p>
-        <button class="btn" onclick="nextLayer(7)">Aage Badho 💫</button>
+        <p>Chahe kitni bhi mushkil situation ho ya kitna bhi stress ho, aap har cheez ko kitne shaant dhang se handle kar leti ho. It's really amazing, Aaradhya!</p>
+        <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
-    <!-- Layer 7: Anti-Stress Thought -->
+    <!-- Layer 7: Golden Rule -->
     <div class="layer" id="layer7">
         <div class="emoji">💡</div>
         <h2>Aapke Liye Golden Rule!</h2>
         <p>Overthinking bilkul mat kiya karo. Hum hamesha yahi mante hain ki tension lene se kuch nahi badalta. Just relax and say — <i>"Jo hoga, dekha jayega!"</i></p>
-        <button class="btn" onclick="nextLayer(8)">Sahi Baat Hai! 👉</button>
+        <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
-    <!-- Layer 8: Miss You GIF Layer -->
+    <!-- Layer 8: GIF Layer (p.gif) -->
     <div class="layer" id="layer8">
         <h2>A Little Moment... 💭</h2>
-        <img src="gif.4.gif" alt="Miss You GIF" class="gif-img" onerror="this.src='https://media.giphy.com/media/3o7TKm1981F4eT214b/giphy.gif'">
+        <img src="p.gif" alt="Miss You GIF" class="gif-img" onerror="this.src='https://media.giphy.com/media/3o7TKm1981F4eT214b/giphy.gif'">
         <p>Kabhie kabhie aapki yaad aati hai, toh bas lagta hai ki aap hamesha khush raho. Aapki khushi humare liye bohot maayne rakhti hai.</p>
-        <button class="btn" onclick="nextLayer(9)">Next Surprise 🎶</button>
+        <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
     <!-- Layer 9: Interactive Treat -->
     <div class="layer" id="layer9">
         <div class="emoji">🍫</div>
         <h2>Virtual Treat Box!</h2>
-        <p>Aaradhya, apni pasand ki treat pick karo:</p>
+        <p>Aaradhya, apni pasand ki treat select karo:</p>
         <div>
-            <span class="treat-box" onclick="pickTreat('🍫 Chocolate')">🍫</span>
-            <span class="treat-box" onclick="pickTreat('🧋 Boba Tea')">🧋</span>
-            <span class="treat-box" onclick="pickTreat('🍦 Ice Cream')">🍦</span>
+            <span class="treat-box" onclick="event.stopPropagation(); pickTreat('🍫 Chocolate')">🍫</span>
+            <span class="treat-box" onclick="event.stopPropagation(); pickTreat('🧋 Boba Tea')">🧋</span>
+            <span class="treat-box" onclick="event.stopPropagation(); pickTreat('🍦 Ice Cream')">🍦</span>
         </div>
-        <p id="treatText" style="font-weight: bold; color: #d63384; height: 20px;"></p>
-        <button class="btn" id="treatBtn" onclick="nextLayer(10)" style="display:none;">Treat Mil Gayi 😋</button>
+        <p id="treatText" style="font-weight: bold; color: #ff69b4; height: 20px; margin-top: 10px;"></p>
+        <div class="tap-hint">✦ TAP ANYWHERE TO CONTINUE ✦</div>
     </div>
 
-    <!-- Layer 10: Compliment -->
+    <!-- Layer 10: Secret Compliment -->
     <div class="layer" id="layer10">
         <div class="emoji">✨</div>
         <h2>A Little Secret...</h2>
         <p>Humne dekha hai ki jab aap smile karti ho na Aaradhya, toh aaspas ka mahaul apne aap bohot positive aur pyaara ho jata hai. So keep smiling always!</p>
-        <button class="btn" onclick="nextLayer(11)">Aapko Kaise Pata? 😉</button>
+        <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
-    <!-- Layer 11: The Sender Reveal -->
+    <!-- Layer 11: Sender Reveal -->
     <div class="layer" id="layer11">
         <div class="emoji">🕵️‍♂️</div>
         <h2>Ye Kisine Bheja Hai...</h2>
         <p>Ye kisi aise insaan ne bheja hai jo aapka ek achha dost aur well-wisher hai. Hum bas yahi chahte hain ki aapki life me hamesha khushiyan rahein.</p>
-        <button class="btn" onclick="nextLayer(12)">Final Message Dekho 🎁</button>
+        <div class="tap-hint">✦ TAP ANYWHERE ✦</div>
     </div>
 
-    <!-- Layer 12: Final Grand Wish -->
+    <!-- Layer 12: Final Celebration -->
     <div class="layer" id="layer12">
         <div class="emoji">🌈</div>
         <h2>Have an Awesome Day, Aaradhya!</h2>
         <p>Hamesha aise hi khush raho, mast raho aur chamakti raho. Aap life me jo bhi karo, humesha successful raho!</p>
-        <button class="btn" onclick="triggerConfetti()">Celebrate 🎉</button>
+        <div class="tap-hint">✦ TAP TO CELEBRATE 🎉 ✦</div>
     </div>
 </div>
 
 <script>
-    // Background Floating Flowers
-    for(let i=0; i<12; i++) {
-        let heart = document.createElement('div');
-        heart.className = 'heart-bg';
-        heart.innerHTML = '🌸';
-        heart.style.left = Math.random() * 100 + 'vw';
-        heart.style.animationDuration = (Math.random() * 3 + 4) + 's';
-        heart.style.animationDelay = Math.random() * 5 + 's';
-        document.body.appendChild(heart);
+    // Floating Background Stars
+    for(let i=0; i<15; i++) {
+        let star = document.createElement('div');
+        star.className = 'stars-bg';
+        star.innerHTML = ['✨', '🌸', '💫', '💖'][Math.floor(Math.random()*4)];
+        star.style.left = Math.random() * 100 + 'vw';
+        star.style.animationDuration = (Math.random() * 3 + 4) + 's';
+        star.style.animationDelay = Math.random() * 5 + 's';
+        document.body.appendChild(star);
     }
 
     function id(elem) { return document.getElementById(elem); }
 
+    let currentLayer = 1;
     let score = 0;
     let gameInterval;
+    let musicStarted = false;
 
-    function startExperience() {
-        // Song Starts automatically here
-        let audio = id('bgMusic');
-        audio.play().catch(e => console.log("Audio touch required"));
-        nextLayer(2);
-        startGame();
+    function handleGlobalClick(e) {
+        // Play audio on first touch
+        if (!musicStarted) {
+            let audio = id('bgMusic');
+            audio.play().catch(err => console.log("Audio play blocked"));
+            musicStarted = true;
+        }
+
+        // Lock screen progression during heart game layer
+        if (currentLayer === 2 && score < 10) {
+            return;
+        }
+
+        // Progress layer on tap
+        if (currentLayer < 12) {
+            currentLayer++;
+            showLayer(currentLayer);
+        } else {
+            triggerConfetti();
+        }
+    }
+
+    function showLayer(layerNum) {
+        const layers = document.querySelectorAll('.layer');
+        layers.forEach(l => l.classList.remove('active'));
+        
+        id('layer' + layerNum).classList.add('active');
+        id('progressBar').style.width = (layerNum / 12) * 100 + '%';
+
+        if(layerNum === 2) {
+            startGame();
+        } else if(layerNum === 12) {
+            triggerConfetti();
+        }
     }
 
     function startGame() {
@@ -240,7 +327,7 @@
                 return;
             }
             createHeart();
-        }, 700);
+        }, 650);
     }
 
     function createHeart() {
@@ -251,14 +338,15 @@
         heart.style.left = Math.random() * 80 + 10 + '%';
         heart.style.animationDuration = (Math.random() * 1.5 + 2) + 's';
 
-        heart.onclick = () => {
+        heart.onclick = (e) => {
+            e.stopPropagation(); // Prevents layer jump when tapping heart
             score++;
             id('scoreText').innerText = "Collected: " + score + " / 10";
             heart.remove();
+            
             if(score >= 10) {
                 clearInterval(gameInterval);
-                id('scoreText').innerText = "Awesome! 🎉 All 10 Hearts Collected!";
-                id('gameNextBtn').style.display = 'inline-block';
+                id('scoreText').innerText = "Awesome! 🎉 Tap anywhere to continue!";
             }
         };
 
@@ -266,41 +354,17 @@
 
         setTimeout(() => {
             if(heart.parentNode) heart.remove();
-        }, 3500);
-    }
-
-    function nextLayer(layerNum) {
-        const layers = document.querySelectorAll('.layer');
-        layers.forEach(l => l.classList.remove('active'));
-        
-        id('layer' + layerNum).classList.add('active');
-        id('progressBar').style.width = (layerNum / 12) * 100 + '%';
-
-        if(layerNum === 12) {
-            triggerConfetti();
-        }
-    }
-
-    function setMood(mood) {
-        if(mood.includes('Thaka')) {
-            id('moodResponse').innerText = "Aaj rest banta hai Aaradhya! Kaam hota rahega, pehle apna dhyan rakho. Hum yahi salah denge 🤍";
-        } else if(mood.includes('Mast')) {
-            id('moodResponse').innerText = "Ye hui na baat! Bas aise hi full positive energy ke saath chamakti raho ✨";
-        } else {
-            id('moodResponse').innerText = "Boredom khatam karne ke liye hi toh humne ye surprise banaya tha 😉";
-        }
-        nextLayer(6);
+        }, 3200);
     }
 
     function pickTreat(item) {
-        id('treatText').innerText = "You picked " + item + "! Enjoy Aaradhya!";
-        id('treatBtn').style.display = "inline-block";
+        id('treatText').innerText = "You picked " + item + "! Enjoy!";
     }
 
     function triggerConfetti() {
         confetti({
-            particleCount: 120,
-            spread: 80,
+            particleCount: 150,
+            spread: 90,
             origin: { y: 0.6 }
         });
     }
@@ -308,4 +372,3 @@
 
 </body>
 </html>
-
